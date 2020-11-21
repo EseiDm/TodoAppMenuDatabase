@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/addTask" android:title="Add Task"></item>
+    <item android:id="@+id/deleteDone" android:title="Delete Done"></item>
+    <item android:id="@+id/toggleDone" android:title="Toggle Done"></item>
+    <item android:id="@+id/saveTasks" android:title="Save"></item>
+</menu>
