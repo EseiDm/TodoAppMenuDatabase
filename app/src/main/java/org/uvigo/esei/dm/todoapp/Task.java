@@ -2,8 +2,12 @@ package org.uvigo.esei.dm.todoapp;
 
 public class Task {
 
+    private Integer id;
     private String name;
     private boolean done = false;
+
+    public Task(){
+    }
 
     public Task(String name){
         this.name = name;
@@ -28,5 +32,13 @@ public class Task {
 
     public void setDone(boolean done) {
         this.done = done;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 }

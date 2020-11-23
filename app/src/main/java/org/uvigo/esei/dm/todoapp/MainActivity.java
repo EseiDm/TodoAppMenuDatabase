@@ -5,7 +5,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -20,6 +22,9 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 
+import org.uvigo.esei.dm.todoapp.database.DBManager;
+import org.uvigo.esei.dm.todoapp.database.TaskFacade;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.FormatFlagsConversionMismatchException;
@@ -28,28 +33,35 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static final String MYTASKS_PREFERENCE = "MYTASKS_PREFERENCE";
-    private List<Task> myTasks;
-    private ArrayAdapter<Task> myArrayAdapter;
+
+    //private List<Task> myTasks;
+    //private ArrayAdapter<Task> myArrayAdapter;
+    private TaskCursorAdapter taskCursorAdapter;
+    private TaskFacade taskFacade;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        SharedPreferences preferences = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE);
-        if (preferences.contains(MYTASKS_PREFERENCE)){
-            String myTasksJson = preferences.getString(MYTASKS_PREFERENCE, "");
-            Gson gson = new Gson();
-            Task[] tasks = gson.fromJson(myTasksJson, Task[].class);
-            myTasks = new ArrayList<Task>(Arrays.asList(tasks));
-        }else
-            myTasks = new ArrayList<Task>();
 
-        //myArrayAdapter = new ArrayAdapter<Task>(MainActivity.this, android.R.layout.simple_list_item_1, myTasks);
-        myArrayAdapter = new CustomArrayAdapter(MainActivity.this, R.layout.list_view_item_custom, myTasks);
+        taskFacade = new TaskFacade(((TodoApplication)getApplication()).getDbManager());
+        Cursor cursor = taskFacade.getTasks();
+        taskCursorAdapter = new TaskCursorAdapter(MainActivity.this, cursor, taskFacade);
         ListView listView = findViewById(R.id.listViewTasks);
-        listView.setAdapter(myArrayAdapter);
 
+        listView.setAdapter(taskCursorAdapter);
         registerForContextMenu(listView);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Intent intent = new Intent(MainActivity.this, TaskDetailActivity.class);
+                Cursor cursor = (Cursor) taskCursorAdapter.getItem(position);
+                Task task  = TaskFacade.readTask(cursor);
+                intent.putExtra(DBManager.TASK_COLUMN_ID, task.getId());
+                startActivity(intent);
+            }
+        });
 
     }
 
@@ -92,12 +104,6 @@ public class MainActivity extends AppCompatActivity {
         }else if (item.getItemId() == R.id.toggleDone){
             showToggleDoneDialog();
             return true;
-        }else if (item.getItemId() == R.id.saveTasks){
-            Gson gson = new Gson();
-            String myTasksJson = gson.toJson(myTasks);
-            SharedPreferences preferences = getSharedPreferences(MainActivity.class.getName(), MODE_PRIVATE);
-            preferences.edit().putString(MYTASKS_PREFERENCE, myTasksJson).apply();
-            Toast.makeText(MainActivity.this, "Save Done", Toast.LENGTH_SHORT).show();
         }
         return false;
     }
@@ -109,10 +115,8 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                for (Task task: myTasks){
-                    task.setDone(true);
-                }
-                myArrayAdapter.notifyDataSetChanged();
+                taskFacade.toggleDone();
+                taskCursorAdapter.swapCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -132,14 +136,8 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                List<Task> toRemove = new ArrayList<Task>();
-                for (Task task: myTasks){
-                    if (task.isDone()){
-                        toRemove.add(task);
-                    }
-                }
-                myTasks.removeAll(toRemove);
-                myArrayAdapter.notifyDataSetChanged();
+                taskFacade.deleteDone();
+                taskCursorAdapter.swapCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -160,8 +158,10 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                myTasks.add(new Task(editText.getText().toString()));
-                myArrayAdapter.notifyDataSetChanged();
+                String taskName = editText.getText().toString();
+                Task task = new Task(taskName);
+                taskFacade.createTask(task);
+                taskCursorAdapter.swapCursor(taskFacade.getTasks());
             }
         });
 
@@ -177,12 +177,14 @@ public class MainActivity extends AppCompatActivity {
     private void showDeleteTaskDialog(final int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Remove Task");
-        builder.setMessage("Remove task " + myTasks.get(position).getName()+ ", are you sure?");
+        Cursor deleteCursor = (Cursor) taskCursorAdapter.getItem(position);
+        final Task task = TaskFacade.readTask(deleteCursor);
+        builder.setMessage("Remove task " + task.getName()+ ", are you sure?");
         builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                myTasks.remove(position);
-                myArrayAdapter.notifyDataSetChanged();
+                taskFacade.removeTask(task);
+                taskCursorAdapter.swapCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -198,15 +200,17 @@ public class MainActivity extends AppCompatActivity {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Edit Task");
         final EditText editText = new EditText(MainActivity.this);
-        String taskName = myTasks.get(position).getName();
-        editText.setText(taskName);
+        Cursor editCursor = (Cursor) taskCursorAdapter.getItem(position);
+        final Task task = TaskFacade.readTask(editCursor);
+        editText.setText(task.getName());
         builder.setView(editText);
         builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 String newName = editText.getText().toString();
-                myTasks.get(position).setName(newName);
-                myArrayAdapter.notifyDataSetChanged();
+                task.setName(newName);
+                taskFacade.updateTask(task);
+                taskCursorAdapter.swapCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
