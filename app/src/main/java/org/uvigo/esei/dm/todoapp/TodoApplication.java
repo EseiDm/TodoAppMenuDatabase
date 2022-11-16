@@ -17,4 +17,5 @@ public class TodoApplication extends Application {
     public DBManager getDbManager() {
         return dbManager;
     }
+
 }

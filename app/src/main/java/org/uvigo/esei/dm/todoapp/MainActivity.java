@@ -43,12 +43,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        taskFacade = new TaskFacade(((TodoApplication)getApplication()).getDbManager());
-        Cursor cursor = taskFacade.getTasks();
-        taskCursorAdapter = new TaskCursorAdapter(MainActivity.this, cursor, taskFacade);
+        taskFacade = new TaskFacade(getDBManager());
         ListView listView = findViewById(R.id.listViewTasks);
-
+        taskCursorAdapter = new TaskCursorAdapter(MainActivity.this, null, taskFacade);
         listView.setAdapter(taskCursorAdapter);
         registerForContextMenu(listView);
 
@@ -63,6 +60,26 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+    }
+
+    private DBManager getDBManager() {
+        return ((TodoApplication) getApplication()).getDbManager();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        ListView listView = findViewById(R.id.listViewTasks);
+        Cursor cursor = taskFacade.getTasks();
+        taskCursorAdapter.changeCursor(cursor);
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        getDBManager().close();
+        this.taskCursorAdapter.getCursor().close();
     }
 
     @Override
@@ -116,7 +133,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 taskFacade.toggleDone();
-                taskCursorAdapter.swapCursor(taskFacade.getTasks());
+                taskCursorAdapter.changeCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -137,7 +154,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 taskFacade.deleteDone();
-                taskCursorAdapter.swapCursor(taskFacade.getTasks());
+                taskCursorAdapter.changeCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -161,7 +178,7 @@ public class MainActivity extends AppCompatActivity {
                 String taskName = editText.getText().toString();
                 Task task = new Task(taskName);
                 taskFacade.createTask(task);
-                taskCursorAdapter.swapCursor(taskFacade.getTasks());
+                taskCursorAdapter.changeCursor(taskFacade.getTasks());
             }
         });
 
@@ -184,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 taskFacade.removeTask(task);
-                taskCursorAdapter.swapCursor(taskFacade.getTasks());
+                taskCursorAdapter.changeCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -210,7 +227,7 @@ public class MainActivity extends AppCompatActivity {
                 String newName = editText.getText().toString();
                 task.setName(newName);
                 taskFacade.updateTask(task);
-                taskCursorAdapter.swapCursor(taskFacade.getTasks());
+                taskCursorAdapter.changeCursor(taskFacade.getTasks());
             }
         });
         builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {

@@ -18,20 +18,19 @@ public class TaskFacade {
     }
 
     public static Task readTask(Cursor cursor){
-        Task toret = new Task();
-        toret.setId(cursor.getInt(cursor.getColumnIndex(DBManager.TASK_COLUMN_ID)));
-        toret.setName(cursor.getString(cursor.getColumnIndex(DBManager.TASK_COLUMN_NAME)));
-        toret.setDone(cursor.getInt(cursor.getColumnIndex(DBManager.TASK_COLUMN_DONE))==1);
+        Task toret = null;
+        if (cursor!=null){
+            try {
+                toret = new Task();
+                toret.setId(cursor.getInt(cursor.getColumnIndex(DBManager.TASK_COLUMN_ID)));
+                toret.setName(cursor.getString(cursor.getColumnIndex(DBManager.TASK_COLUMN_NAME)));
+                toret.setDone(cursor.getInt(cursor.getColumnIndex(DBManager.TASK_COLUMN_DONE))==1);
+            }catch (Exception e){
+                Log.e(TaskFacade.class.getName(),"readTask" ,e);
+            }
+        }
         return toret;
     }
-
-    public Cursor getTasks(){
-        Cursor toret = null;
-        toret = dbManager.getReadableDatabase().rawQuery("SELECT * FROM "+DBManager.TASKS_TABLE_NAME,
-                null);
-        return toret;
-    }
-
 
     public void toggleDone() {
         SQLiteDatabase writableDatabase = dbManager.getWritableDatabase();
@@ -127,13 +126,31 @@ public class TaskFacade {
         }
     }
 
+    public Cursor getTasks(){
+        Cursor toret = null;
+
+        toret = dbManager.getReadableDatabase().rawQuery("SELECT * FROM "+DBManager.TASKS_TABLE_NAME,
+               null);
+
+        return toret;
+    }
+
     public Task getTaskById(Integer id) {
-        Cursor cursor =
-                dbManager.getReadableDatabase().rawQuery("SELECT * FROM " + DBManager.TASKS_TABLE_NAME
-                + " WHERE "
-                + DBManager.TASK_COLUMN_ID + " = ?",
-                new String[]{id+""});
-        cursor.moveToFirst();
-        return readTask(cursor);
+        Task toret = null;
+        if (id!=null){
+            Cursor cursor =
+                    dbManager.getReadableDatabase().rawQuery("SELECT * FROM " + DBManager.TASKS_TABLE_NAME
+                                    + " WHERE "
+                                    + DBManager.TASK_COLUMN_ID + " = ?",
+                            new String[]{id+""});
+
+            if (cursor.moveToFirst()){
+                toret = readTask(cursor);
+            }
+            cursor.close();
+        }
+
+        return toret;
+
     }
 }

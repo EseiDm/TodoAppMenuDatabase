@@ -11,8 +11,7 @@ import androidx.annotation.Nullable;
 public class DBManager extends SQLiteOpenHelper {
 
     private static String TODO_DATABASE_NAME = "todo_db";
-    private static int TODO_DATABASE_VERSION = 1;
-
+    private static int TODO_DATABASE_VERSION =2;
     public static final String TASKS_TABLE_NAME = "tasks";
     public static final String TASK_COLUMN_ID = "_id";
     public static final String TASK_COLUMN_NAME = "name";
@@ -42,6 +41,6 @@ public class DBManager extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+            Log.i(DBManager.class.getSimpleName(), "onUpgrade call!");
     }
 }

@@ -28,21 +28,38 @@ public class TaskCursorAdapter extends CursorAdapter {
                 parent,false );
     }
 
+    class ViewHolder{
+        TextView textView;
+        CheckBox checkBox;
+    }
     @Override
     public void bindView(View view, Context context, Cursor cursor) {
 
-        TextView textView = view.findViewById(R.id.textViewTaskName);
-        final Task task = TaskFacade.readTask(cursor);
-        textView.setText(task.getName());
-        if (task.isDone()){
-            textView.setPaintFlags(textView.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
-        }else{
-            textView.setPaintFlags(textView.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+        ViewHolder viewHolder = null;
+        if (view!=null) {
+            viewHolder = (ViewHolder) view.getTag();
+            if (viewHolder == null){
+                viewHolder = new ViewHolder();
+                TextView textView = view.findViewById(R.id.textViewTaskName);
+                viewHolder.textView = textView;
+                CheckBox checkBox = view.findViewById(R.id.checkBoxTaskDone);
+                viewHolder.checkBox = checkBox;
+                view.setTag(viewHolder);
+            }
         }
 
-        CheckBox checkBox = view.findViewById(R.id.checkBoxTaskDone);
-        checkBox.setChecked(task.isDone());
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+        final Task task = TaskFacade.readTask(cursor);
+        viewHolder.textView.setText(task.getName());
+        if (task.isDone()){
+            viewHolder.textView.setPaintFlags( viewHolder.textView.getPaintFlags()
+                    | Paint.STRIKE_THRU_TEXT_FLAG);
+        }else{
+            viewHolder.textView.setPaintFlags( viewHolder.textView.getPaintFlags()
+                    & (~Paint.STRIKE_THRU_TEXT_FLAG));
+        }
+
+        viewHolder.checkBox.setChecked(task.isDone());
+        viewHolder.checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 task.setDone(isChecked);
