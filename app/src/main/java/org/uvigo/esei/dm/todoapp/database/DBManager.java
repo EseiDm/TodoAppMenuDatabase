@@ -20,6 +20,7 @@ public class DBManager extends SQLiteOpenHelper {
     public DBManager(@Nullable Context context) {
         super(context, TODO_DATABASE_NAME, null,
                 TODO_DATABASE_VERSION, null);
+
     }
 
     @Override

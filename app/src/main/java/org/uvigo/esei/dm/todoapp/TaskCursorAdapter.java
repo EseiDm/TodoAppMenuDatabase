@@ -64,7 +64,8 @@ public class TaskCursorAdapter extends CursorAdapter {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 task.setDone(isChecked);
                 taskFacade.updateTask(task);
-                swapCursor(taskFacade.getTasks());
+                changeCursor(taskFacade.getTasks());
+
             }
         });
 
