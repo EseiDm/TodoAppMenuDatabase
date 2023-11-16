@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        taskFacade = new TaskFacade(getDBManager());
+        taskFacade = new TaskFacade((TodoApplication) getApplication());
         ListView listView = findViewById(R.id.listViewTasks);
         taskCursorAdapter = new TaskCursorAdapter(MainActivity.this, null, taskFacade);
         listView.setAdapter(taskCursorAdapter);

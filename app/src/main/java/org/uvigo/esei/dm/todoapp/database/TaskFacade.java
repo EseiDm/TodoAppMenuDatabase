@@ -1,11 +1,13 @@
 package org.uvigo.esei.dm.todoapp.database;
 
+import android.annotation.SuppressLint;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import org.uvigo.esei.dm.todoapp.Task;
+import org.uvigo.esei.dm.todoapp.TodoApplication;
 
 import java.util.jar.JarEntry;
 
@@ -13,10 +15,12 @@ public class TaskFacade {
 
     private DBManager dbManager;
 
-    public TaskFacade(DBManager dbManager){
-        this.dbManager = dbManager;
+    public TaskFacade(TodoApplication todoApplication){
+
+        this.dbManager = todoApplication.getDbManager();
     }
 
+    @SuppressLint("Range")
     public static Task readTask(Cursor cursor){
         Task toret = null;
         if (cursor!=null){

@@ -15,8 +15,7 @@ public class TaskDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_task_detail);
         Integer id = getIntent().getExtras().getInt(DBManager.TASK_COLUMN_ID);
-        DBManager dbManager = ((TodoApplication)getApplication()).getDbManager();
-        TaskFacade taskFacade = new TaskFacade(dbManager);
+        TaskFacade taskFacade = new TaskFacade((TodoApplication) getApplication());
         Task task = taskFacade.getTaskById(id);
         TextView textView  =findViewById(R.id.textViewTaskNameDetail);
         textView.setText(task.getName());

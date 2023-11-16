@@ -18,7 +18,8 @@ public class DBManager extends SQLiteOpenHelper {
     public static final String TASK_COLUMN_DONE = "done";
 
     public DBManager(@Nullable Context context) {
-        super(context, TODO_DATABASE_NAME, null, TODO_DATABASE_VERSION);
+        super(context, TODO_DATABASE_NAME, null,
+                TODO_DATABASE_VERSION, null);
     }
 
     @Override
